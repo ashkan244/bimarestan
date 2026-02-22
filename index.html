@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>داشبورد مدیریت شیفت پزشکان</title>
+    <style>
+        /* ==========================================
+           1. PREMIUM TYPOGRAPHY & VARIABLES
+           ========================================== */
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.0.0/Vazirmatn-font-face.css');
+
+        :root {
+            --bg-body: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --white-glass: rgba(255, 255, 255, 0.75);
+            --border-light: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+            
+            /* Dynamic Theme Variables */
+            --theme-color: #059669;
+            --theme-light: #d1fae5;
+            --theme-bg: #ecfdf5;
+            --theme-grad: linear-gradient(135deg, #059669, #10b981);
+            --theme-glow: rgba(16, 185, 129, 0.4);
+        }
+
+        /* --- Dynamic Themes --- */
+        body.theme-infectious {
+            --theme-color: #059669; --theme-light: #d1fae5; --theme-bg: #ecfdf5;
+            --theme-grad: linear-gradient(135deg, #059669, #10b981); --theme-glow: rgba(16, 185, 129, 0.4);
+            --bg-mesh-1: #d1fae5; --bg-mesh-2: #ccfbf1;
+        }
+        body.theme-internal {
+            --theme-color: #2563eb; --theme-light: #dbeafe; --theme-bg: #eff6ff;
+            --theme-grad: linear-gradient(135deg, #1d4ed8, #3b82f6); --theme-glow: rgba(59, 130, 246, 0.4);
+            --bg-mesh-1: #dbeafe; --bg-mesh-2: #e0e7ff;
+        }
+        body.theme-shafa {
+            --theme-color: #9333ea; --theme-light: #f3e8ff; --theme-bg: #faf5ff;
+            --theme-grad: linear-gradient(135deg, #7e22ce, #a855f7); --theme-glow: rgba(168, 85, 247, 0.4);
+            --bg-mesh-1: #f3e8ff; --bg-mesh-2: #fae8ff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            direction: rtl;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.5s ease;
+        }
+
+        /* --- Animated Mesh Background --- */
+        .mesh-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1; overflow: hidden; pointer-events: none;
+        }
+        .mesh-blob {
+            position: absolute; border-radius: 50%; filter: blur(80px);
+            opacity: 0.6; animation: float 20s infinite ease-in-out alternate;
+            transition: background 1s ease;
+        }
+        .mesh-blob-1 { top: -10%; right: -10%; width: 50vw; height: 50vw; background: var(--bg-mesh-1); animation-delay: 0s; }
+        .mesh-blob-2 { bottom: -10%; left: -10%; width: 60vw; height: 60vw; background: var(--bg-mesh-2); animation-delay: -5s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-5%, 5%) scale(1.1); }
+            100% { transform: translate(5%, -5%) scale(0.9); }
+        }
+
+        .container { max-width: 1200px; margin: 0 auto; position: relative; z-index: 1; }
+
+        /* --- Glassmorphism Header --- */
+        .app-header {
+            background: var(--white-glass);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            padding: 1.5rem 2.5rem; border-radius: 28px;
+            box-shadow: var(--glass-shadow); border: 1px solid var(--border-light);
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2.5rem;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 1.5rem; }
+        .header-icon {
+            background: var(--theme-grad); color: white;
+            padding: 1.2rem; border-radius: 20px;
+            box-shadow: 0 10px 25px -5px var(--theme-glow);
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.5s ease;
+        }
+        .header-title { font-size: 2rem; font-weight: 900; color: #0f172a; margin-bottom: 0.2rem; letter-spacing: -0.5px; }
+        .header-subtitle { font-size: 1.05rem; color: var(--text-muted); font-weight: 500; }
+        .header-badge {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: var(--theme-bg); color: var(--theme-color);
+            padding: 0.6rem 1.25rem; border-radius: 14px;
+            font-weight: 800; font-size: 0.95rem; border: 1px solid var(--theme-light);
+            transition: all 0.3s ease;
+        }
+
+        /* --- Interactive Tabs --- */
+        .tabs-container {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+            background: var(--white-glass); backdrop-filter: blur(20px);
+            padding: 0.5rem; border-radius: 20px;
+            margin-bottom: 3rem; border: 1px solid var(--border-light);
+            box-shadow: var(--glass-shadow);
+        }
+        .tab-btn {
+            flex: 1; min-width: 200px; display: flex; justify-content: center; align-items: center; gap: 0.8rem;
+            padding: 1.1rem; border-radius: 16px; font-weight: 800; font-size: 1.1rem;
+            border: none; cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            background: transparent; color: var(--text-muted); font-family: inherit;
+        }
+        .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.8); color: #0f172a; }
+        .tab-btn.active {
+            background: var(--theme-grad); color: white;
+            box-shadow: 0 10px 20px -5px var(--theme-glow); transform: translateY(-2px);
+        }
+
+        /* --- Stat Cards (Animated) --- */
+        .section-title {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 1.2rem; color: var(--theme-color);
+            padding-right: 0.5rem;
+        }
+        .section-title h2 { font-size: 1.35rem; font-weight: 900; color: #1e293b; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+            gap: 1.25rem; margin-bottom: 3.5rem;
+        }
+        .stat-card {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.25rem 1.5rem; background: var(--white-glass);
+            backdrop-filter: blur(10px); border-radius: 24px;
+            box-shadow: var(--glass-shadow); border: 1px solid var(--border-light);
+            transition: all 0.3s ease;
+            opacity: 0; transform: translateY(20px); animation: slideUp 0.5s forwards;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 15px 30px -10px var(--theme-glow);
+            border-color: var(--theme-light);
+        }
+        .stat-left { display: flex; align-items: center; gap: 1rem; }
+        .stat-icon-wrap {
+            background: var(--theme-bg); color: var(--theme-color);
+            padding: 0.8rem; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .stat-name { font-weight: 900; font-size: 1.15rem; color: #334155; }
+        .stat-right {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--bg-body); padding: 0.5rem 1rem;
+            border-radius: 14px; border: 1px solid rgba(0,0,0,0.03);
+        }
+        .stat-count { font-size: 1.6rem; font-weight: 900; line-height: 1; margin-bottom: 0.2rem; color: var(--theme-color); }
+        .stat-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); }
+
+        /* --- Premium Table --- */
+        .table-container {
+            background: var(--white-glass); backdrop-filter: blur(20px);
+            border-radius: 28px; box-shadow: var(--glass-shadow);
+            border: 1px solid var(--border-light); overflow: hidden;
+            animation: fadeIn 0.6s ease forwards;
+        }
+        .table-header {
+            padding: 1.5rem 2rem; background: rgba(255,255,255,0.5);
+            display: flex; align-items: center; gap: 0.8rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        .table-header svg { color: var(--theme-color); }
+        .table-header h3 { margin: 0; font-size: 1.3rem; font-weight: 900; color: #0f172a; }
+
+        .table-responsive { overflow-x: auto; padding: 0.5rem; }
+        .data-table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: right; }
+        
+        .data-table th {
+            padding: 1.25rem 1.5rem; font-weight: 800; color: var(--text-muted);
+            font-size: 1rem; border-bottom: 2px solid rgba(0,0,0,0.04);
+        }
+        
+        .data-table td {
+            padding: 1rem 1.5rem; font-weight: 800; color: #334155; font-size: 1.1rem;
+            border-bottom: 1px dashed rgba(0,0,0,0.06); transition: all 0.2s;
+        }
+        
+        .data-table tbody tr { opacity: 0; transform: translateY(10px); animation: slideUp 0.4s forwards; }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table tbody tr:hover td { background: var(--theme-bg); color: var(--theme-color); }
+
+        .date-cell { display: flex; align-items: center; gap: 1rem; color: var(--text-muted); font-size: 1rem; }
+        .date-badge {
+            display: flex; justify-content: center; align-items: center;
+            width: 2.8rem; height: 2.8rem; border-radius: 12px;
+            background: var(--theme-bg); color: var(--theme-color);
+            font-weight: 900; font-size: 1.2rem; transition: all 0.3s;
+            box-shadow: inset 0 0 0 1px var(--theme-light);
+        }
+        .data-table tr:hover .date-badge { transform: scale(1.1) rotate(-3deg); background: var(--theme-grad); color: white; }
+
+        .empty-cell {
+            display: inline-block; padding: 0.3rem 0.8rem; border-radius: 8px;
+            background: #f1f5f9; color: #94a3b8; font-weight: 600; font-size: 0.9rem;
+        }
+        .filled-cell { color: inherit; }
+        
+        .shift-header { display: flex; align-items: center; gap: 8px; }
+        .th-morning { color: #ea580c !important; }
+        .th-evening { color: #9333ea !important; }
+        .th-night { color: #4f46e5 !important; }
+
+        /* --- Animations --- */
+        @keyframes slideUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; } to { opacity: 1; }
+        }
+
+        /* --- Responsive Design --- */
+        @media (max-width: 768px) {
+            .app-header { flex-direction: column; align-items: flex-start; gap: 1rem; padding: 1.5rem; border-radius: 20px;}
+            .tabs-container { flex-direction: column; border-radius: 16px; }
+            .data-table th, .data-table td { padding: 1rem; font-size: 1rem; }
+            .header-title { font-size: 1.5rem; }
+            .date-badge { width: 2.4rem; height: 2.4rem; font-size: 1rem;}
+        }
+    </style>
+</head>
+<body class="theme-infectious">
+
+    <!-- Animated Mesh Background -->
+    <div class="mesh-bg">
+        <div class="mesh-blob mesh-blob-1"></div>
+        <div class="mesh-blob mesh-blob-2"></div>
+    </div>
+
+    <div class="container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="header-icon" id="main-icon">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                </div>
+                <div>
+                    <h1 class="header-title">داشبورد کشیک پزشکان</h1>
+                    <p class="header-subtitle">برنامه زمانی اسفند ۱۴۰۴ - بیمارستان گلستان و شفا</p>
+                </div>
+            </div>
+            <div class="header-badge" id="header-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 7a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>گزارش جامع آمار</span>
+            </div>
+        </header>
+
+        <!-- Tabs -->
+        <nav class="tabs-container">
+            <button class="tab-btn active" onclick="switchTab('infectious')" id="tab-infectious">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                بخش عفونی - گلستان
+            </button>
+            <button class="tab-btn" onclick="switchTab('internal')" id="tab-internal">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                بخش داخلی - گلستان
+            </button>
+            <button class="tab-btn" onclick="switchTab('shafa')" id="tab-shafa">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6v4 M14 14h-4 M14 18h-4 M14 8h-4 M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2 M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"></path></svg>
+                بیمارستان شفا
+            </button>
+        </nav>
+
+        <!-- Stats Grid -->
+        <div class="section-title">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            <h2>آمار فعالیت پزشکان (اسفند)</h2>
+        </div>
+        <div class="stats-grid" id="stats-container">
+            <!-- Injected via JS -->
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+            <div class="table-header">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                <h3 id="table-title">برنامه روزانه</h3>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead id="table-head">
+                        <!-- Headers injected via JS -->
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Rows injected via JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         JAVASCRIPT LOGIC
+         ========================================== -->
+    <script>
+        // --- 1. DATA ---
+        const infectiousData = [
+            { date: '1/12', doctor: 'دارابی' }, { date: '2/12', doctor: 'پوراحسانی' },
+            { date: '3/12', doctor: 'پوراحسانی' }, { date: '4/12', doctor: 'آرزویی' },
+            { date: '5/12', doctor: 'آرزویی' }, { date: '6/12', doctor: 'پوراحسانی' },
+            { date: '7/12', doctor: 'شمی پور' }, { date: '8/12', doctor: 'شمی پور' },
+            { date: '9/12', doctor: 'پوراحسانی' }, { date: '10/12', doctor: 'پوراحسانی' },
+            { date: '11/12', doctor: 'دارابی' }, { date: '12/12', doctor: 'دارابی' },
+            { date: '13/12', doctor: 'دارابی' }, { date: '14/12', doctor: 'رضوی' },
+            { date: '15/12', doctor: 'دارابی' }, { date: '16/12', doctor: 'دارابی' },
+            { date: '17/12', doctor: 'پوراحسانی' }, { date: '18/12', doctor: 'آرزویی' },
+            { date: '19/12', doctor: 'آرزویی' }, { date: '20/12', doctor: 'پوراحسانی' },
+            { date: '21/12', doctor: 'معارفی' }, { date: '22/12', doctor: 'معارفی' },
+            { date: '23/12', doctor: 'پوراحسانی' }, { date: '24/12', doctor: 'پوراحسانی' },
+            { date: '25/12', doctor: 'آرزویی' }, { date: '26/12', doctor: 'آرزویی' },
+            { date: '27/12', doctor: 'پوراحسانی' }, { date: '28/12', doctor: 'معارفی' },
+            { date: '29/12', doctor: 'شمی پور' }
+        ];
+
+        const internalData = [
+            { date: '1/12', doctor: 'معارفی' }, { date: '2/12', doctor: 'حسن نژاد' },
+            { date: '3/12', doctor: 'معارفی' }, { date: '4/12', doctor: 'شمی پور' },
+            { date: '5/12', doctor: 'قلاوند' }, { date: '6/12', doctor: 'مظفری' },
+            { date: '7/12', doctor: 'شمی پور' }, { date: '8/12', doctor: 'شمی پور' },
+            { date: '9/12', doctor: 'مظفری' }, { date: '10/12', doctor: 'معارفی' },
+            { date: '11/12', doctor: 'حسن نژاد' }, { date: '12/12', doctor: 'معارفی' },
+            { date: '13/12', doctor: 'پورکاوه' }, { date: '14/12', doctor: 'شمی پور' },
+            { date: '15/12', doctor: 'پورکاوه' }, { date: '16/12', doctor: 'شمی پور' },
+            { date: '17/12', doctor: 'پورکاوه' }, { date: '18/12', doctor: 'قلاوند' },
+            { date: '19/12', doctor: 'حسن نژاد' }, { date: '20/12', doctor: 'پورکاوه' },
+            { date: '21/12', doctor: 'معارفی' }, { date: '22/12', doctor: 'معارفی' },
+            { date: '23/12', doctor: 'شمی پور' }, { date: '24/12', doctor: 'حسن نژاد' },
+            { date: '25/12', doctor: 'معارفی' }, { date: '26/12', doctor: 'معارفی' },
+            { date: '27/12', doctor: 'شمی پور' }, { date: '28/12', doctor: 'معارفی' },
+            { date: '29/12', doctor: 'شمی پور' }
+        ];
+
+        const shafaData = [
+            { date: '1/12', morning: 'علی مرادی', evening: 'علی مرادی', night: '' },
+            { date: '2/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '3/12', morning: '', evening: 'بالی زاده', night: 'بالی زاده' },
+            { date: '4/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '5/12', morning: '', evening: 'بالی زاده', night: 'بالی زاده' },
+            { date: '6/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '7/12', morning: 'آرزویی', evening: 'حسن نژاد', night: 'حسن نژاد' },
+            { date: '8/12', morning: 'علی مرادی', evening: 'حسن نژاد', night: 'حسن نژاد' },
+            { date: '9/12', morning: '', evening: 'عباسی', night: 'آرزویی' },
+            { date: '10/12', morning: '', evening: 'شمی پور', night: 'شمی پور' },
+            { date: '11/12', morning: '', evening: 'قلاوند', night: 'قلاوند' },
+            { date: '12/12', morning: '', evening: 'مظفری', night: 'مظفری' },
+            { date: '13/12', morning: '', evening: 'بالی زاده', night: 'بالی زاده' },
+            { date: '14/12', morning: 'آرزویی', evening: 'مظفری', night: 'مظفری' },
+            { date: '15/12', morning: 'براتی', evening: 'براتی', night: '' },
+            { date: '16/12', morning: '', evening: 'آرزویی', night: 'آرزویی' },
+            { date: '17/12', morning: 'آرزویی', evening: 'معصومی', night: 'معصومی' },
+            { date: '18/12', morning: '', evening: '', night: 'امین دزفولی' },
+            { date: '19/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '20/12', morning: 'عباسی', evening: 'احمدی', night: '' },
+            { date: '21/12', morning: 'آرزویی', evening: 'عباسی', night: 'امین دزفولی' },
+            { date: '22/12', morning: 'احمدی', evening: 'احمدی', night: '' },
+            { date: '23/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '24/12', morning: '', evening: 'حسن نژاد', night: 'حسن نژاد' },
+            { date: '25/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '26/12', morning: '', evening: 'قلاوند', night: 'قلاوند' },
+            { date: '27/12', morning: '', evening: 'احمدی', night: 'امین دزفولی' },
+            { date: '28/12', morning: 'آرزویی', evening: 'شمی پور', night: '' },
+            { date: '29/12', morning: 'امین دزفولی', evening: 'امین دزفولی', night: '' }
+        ];
+
+        // --- 2. SVG ICONS ---
+        const userIcon = `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+        const sunIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M6.34 17.66l-1.41 1.41 M19.07 4.93l-1.41 1.41"/></svg>`;
+        const sunsetIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10V2 M4.93 10.93l1.41 1.41 M2 18h2 M20 18h2 M19.07 10.93l-1.41 1.41 M22 22H2 M16 6l-4-4-4 4 M16 18a4 4 0 0 0-8 0"/></svg>`;
+        const moonIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>`;
+
+        // --- 3. CORE LOGIC ---
+        function calculateStats(data, isShafa) {
+            const stats = {};
+            if (!isShafa) {
+                data.forEach(item => {
+                    if (item.doctor && item.doctor !== '---') {
+                        stats[item.doctor] = (stats[item.doctor] || 0) + 1;
+                    }
+                });
+            } else {
+                data.forEach(item => {
+                    ['morning', 'evening', 'night'].forEach(shift => {
+                        const doc = item[shift];
+                        if (doc && doc.trim() !== '' && doc !== '---') {
+                            stats[doc] = (stats[doc] || 0) + 1;
+                        }
+                    });
+                });
+            }
+            return Object.entries(stats).sort((a, b) => b[1] - a[1]);
+        }
+
+        function renderStats(stats) {
+            const container = document.getElementById('stats-container');
+            container.innerHTML = '';
+            stats.forEach(([doctor, count], idx) => {
+                // Add staggered animation delay
+                const delay = idx * 0.05;
+                container.innerHTML += `
+                    <div class="stat-card" style="animation-delay: ${delay}s">
+                        <div class="stat-left">
+                            <div class="stat-icon-wrap">${userIcon}</div>
+                            <span class="stat-name">${doctor}</span>
+                        </div>
+                        <div class="stat-right">
+                            <span class="stat-count">${count}</span>
+                            <span class="stat-label">شیفت کامل</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderTable(data, tabId) {
+            const tableHead = document.getElementById('table-head');
+            const tableBody = document.getElementById('table-body');
+            const title = document.getElementById('table-title');
+
+            if (tabId === 'shafa') {
+                title.innerText = 'لیست شیفت‌های بیمارستان شفا';
+                tableHead.innerHTML = `
+                    <tr>
+                        <th style="width: 25%">تاریخ و روز</th>
+                        <th class="th-morning"><div class="shift-header">${sunIcon} شیفت صبح</div></th>
+                        <th class="th-evening"><div class="shift-header">${sunsetIcon} شیفت عصر</div></th>
+                        <th class="th-night"><div class="shift-header">${moonIcon} شیفت شب</div></th>
+                    </tr>
+                `;
+                tableBody.innerHTML = data.map((row, idx) => `
+                    <tr style="animation-delay: ${idx * 0.03}s">
+                        <td>
+                            <div class="date-cell">
+                                <div class="date-badge">${row.date.split('/')[0]}</div>
+                                <span>اسفند</span>
+                            </div>
+                        </td>
+                        <td>${row.morning ? `<span class="filled-cell">${row.morning}</span>` : '<span class="empty-cell">بدون شیفت</span>'}</td>
+                        <td>${row.evening ? `<span class="filled-cell">${row.evening}</span>` : '<span class="empty-cell">بدون شیفت</span>'}</td>
+                        <td>${row.night ? `<span class="filled-cell">${row.night}</span>` : '<span class="empty-cell">بدون شیفت</span>'}</td>
+                    </tr>
+                `).join('');
+            } else {
+                title.innerText = tabId === 'infectious' ? 'برنامه کشیک بخش عفونی' : 'برنامه کشیک بخش داخلی';
+                tableHead.innerHTML = `
+                    <tr>
+                        <th style="width: 30%">تاریخ و روز</th>
+                        <th>نام پزشک رجیستر</th>
+                    </tr>
+                `;
+                tableBody.innerHTML = data.map((row, idx) => `
+                    <tr style="animation-delay: ${idx * 0.03}s">
+                        <td>
+                            <div class="date-cell">
+                                <div class="date-badge">${row.date.split('/')[0]}</div>
+                                <span>اسفند</span>
+                            </div>
+                        </td>
+                        <td><span class="filled-cell">${row.doctor}</span></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function switchTab(tabId) {
+            // Update Active Tab Button
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+
+            // Switch Global Theme Class
+            document.body.className = `theme-${tabId}`;
+
+            // Load Correct Data
+            let data = [];
+            let isShafa = false;
+
+            if (tabId === 'infectious') {
+                data = infectiousData;
+            } else if (tabId === 'internal') {
+                data = internalData;
+            } else if (tabId === 'shafa') {
+                data = shafaData;
+                isShafa = true;
+            }
+
+            // Render
+            const stats = calculateStats(data, isShafa);
+            renderStats(stats);
+            renderTable(data, tabId);
+        }
+
+        // Init
+        window.onload = () => {
+            switchTab('infectious');
+        };
+    </script>
+</body>
+</html>
